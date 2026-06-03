@@ -26,32 +26,32 @@ def send_verification_email(to_email: str, verify_url: str) -> tuple[bool, str]:
     from_addr = os.getenv("SMTP_FROM", user).strip()
     app_name = os.getenv("APP_NAME", "ACTR Lab — AI Games")
 
-    subject = f"[{app_name}] 请验证您的注册邮箱"
-    text_body = f"""您好，
+    subject = f"[{app_name}] Verify your email address"
+    text_body = f"""Hello,
 
-您正在注册 {app_name} 管理员账号。
+You are registering an admin account for {app_name}.
 
-请点击以下链接完成邮箱验证（24 小时内有效）：
+Click the link below to verify your email (valid for 24 hours):
 {verify_url}
 
-若您未发起注册，请忽略本邮件。
+If you did not request this, you can ignore this email.
 
 — {app_name}
 """
     html_body = f"""
     <div style="font-family: Inter, sans-serif; max-width: 520px; margin: 0 auto;">
       <h2 style="color: #2563eb;">{app_name}</h2>
-      <p>您好，</p>
-      <p>您正在注册管理员账号。请点击下方按钮完成邮箱验证（24 小时内有效）：</p>
+      <p>Hello,</p>
+      <p>You are registering an admin account. Click the button below to verify your email (valid for 24 hours):</p>
       <p style="text-align: center; margin: 28px 0;">
         <a href="{verify_url}"
            style="background: #2563eb; color: #fff; padding: 12px 24px;
                   border-radius: 8px; text-decoration: none; font-weight: 600;">
-          验证邮箱并激活账号
+          Verify email and activate account
         </a>
       </p>
-      <p style="color: #64748b; font-size: 14px;">或复制链接到浏览器：<br>{verify_url}</p>
-      <p style="color: #94a3b8; font-size: 12px;">若您未发起注册，请忽略本邮件。</p>
+      <p style="color: #64748b; font-size: 14px;">Or copy this link into your browser:<br>{verify_url}</p>
+      <p style="color: #94a3b8; font-size: 12px;">If you did not request this, you can ignore this email.</p>
     </div>
     """
 
@@ -68,10 +68,10 @@ def send_verification_email(to_email: str, verify_url: str) -> tuple[bool, str]:
             server.login(user, password)
             server.sendmail(from_addr, [to_email], msg.as_string())
         print(f"✅ [Email] Verification sent to {to_email}")
-        return True, "验证邮件已发送，请查收 Gmail 收件箱（含垃圾箱）。"
+        return True, "Verification email sent. Please check your Gmail inbox (and spam folder)."
     except smtplib.SMTPAuthenticationError:
         print("❌ [Email] Gmail authentication failed.")
-        return False, "邮件发送失败：请检查 Gmail 应用专用密码是否正确。"
+        return False, "Failed to send email: check your Gmail App Password in .env."
     except Exception as e:
         print(f"❌ [Email] Send failed: {e}")
-        return False, f"邮件发送失败：{e}"
+        return False, f"Failed to send email: {e}"

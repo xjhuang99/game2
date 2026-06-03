@@ -267,7 +267,9 @@ def finish_match(s_code, m_id):
 # ==========================================
 @app.route('/')
 def index():
-    return render_template('landing.html')
+    if current_user.is_authenticated:
+        return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('login'))
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -279,23 +281,23 @@ def login():
         account = AdminAccount.query.filter_by(username=username).first()
         if account:
             if not account.is_verified:
-                flash('请先点击 Gmail 中的验证链接激活账号，再登录。')
+                flash('Please verify your email via the link we sent to Gmail before signing in.')
                 return render_template('login.html')
             if account.check_password(password):
                 login_user(account)
-                flash('登录成功，欢迎回来！', 'success')
+                flash('Signed in successfully. Welcome back!', 'success')
                 return redirect(url_for('admin_dashboard'))
-            flash('用户名或密码错误')
+            flash('Invalid username or password')
             return render_template('login.html')
 
         legacy_user = os.getenv('LEGACY_ADMIN_USER', 'ACTR2026')
         legacy_pass = os.getenv('LEGACY_ADMIN_PASSWORD', 'ACTR2026')
         if username == legacy_user and password == legacy_pass:
             login_user(AdminUser(username))
-            flash('登录成功', 'success')
+            flash('Signed in successfully', 'success')
             return redirect(url_for('admin_dashboard'))
 
-        flash('用户名或密码错误')
+        flash('Invalid username or password')
     return render_template('login.html')
 
 
@@ -308,21 +310,21 @@ def register():
         confirm = request.form.get('confirm_password') or ''
 
         if len(username) < 3:
-            flash('用户名至少 3 个字符')
+            flash('Username must be at least 3 characters')
             return render_template('register.html')
         if not _valid_email(email):
-            flash('请输入有效的邮箱地址')
+            flash('Please enter a valid email address')
             return render_template('register.html')
         if len(password) < 8:
-            flash('密码至少 8 位')
+            flash('Password must be at least 8 characters')
             return render_template('register.html')
         if password != confirm:
-            flash('两次输入的密码不一致')
+            flash('Passwords do not match')
             return render_template('register.html')
         if AdminAccount.query.filter(
             (AdminAccount.username == username) | (AdminAccount.email == email)
         ).first():
-            flash('用户名或邮箱已被注册')
+            flash('Username or email is already registered')
             return render_template('register.html')
 
         token = secrets.token_urlsafe(32)
@@ -352,18 +354,18 @@ def register():
 def verify_email(token):
     account = AdminAccount.query.filter_by(verify_token=token).first()
     if not account:
-        flash('验证链接无效或已使用')
+        flash('Verification link is invalid or already used')
         return render_template('verify_result.html', success=False)
 
     if account.verify_token_expires and account.verify_token_expires < datetime.utcnow():
-        flash('验证链接已过期，请重新注册')
+        flash('Verification link has expired. Please register again.')
         return render_template('verify_result.html', success=False)
 
     account.is_verified = True
     account.verify_token = None
     account.verify_token_expires = None
     db.session.commit()
-    flash('邮箱验证成功！您现在可以登录管理后台。', 'success')
+    flash('Email verified successfully. You can now sign in to the admin dashboard.', 'success')
     return render_template('verify_result.html', success=True)
 
 

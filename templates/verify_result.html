@@ -1,30 +1,17 @@
-<!DOCTYPE html>
-<html lang="zh-CN">
-<head>
-    <title>邮箱验证 — ACTR Lab</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; background: #f0f2f5; display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }
-        .card { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); max-width: 400px; text-align: center; }
-        .icon { font-size: 48px; margin-bottom: 12px; }
-        a { display: inline-block; margin-top: 20px; padding: 12px 24px; background: #2563eb; color: white; text-decoration: none; border-radius: 6px; font-weight: 600; }
-        .fail { color: #991b1b; }
-        .success { color: #166534; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        {% if success %}
-            <div class="icon">✅</div>
-            <h2 class="success">邮箱验证成功！</h2>
-            <p>您的账号已激活，现在可以登录管理 AI Games 后台。</p>
-            <a href="{{ url_for('login') }}">立即登录</a>
-        {% else %}
-            <div class="icon">❌</div>
-            <h2 class="fail">验证失败</h2>
-            <p>链接无效或已过期。请重新注册或联系管理员。</p>
-            <a href="{{ url_for('register') }}">重新注册</a>
-        {% endif %}
-    </div>
-</body>
-</html>
+{% extends "auth_base.html" %}
+{% block title %}Email verification — ACTR Lab{% endblock %}
+{% block content %}
+<div class="actr-card" style="text-align: center;">
+    {% if success %}
+        <div class="auth-icon">✅</div>
+        <h2 class="actr-card-title" style="color: var(--success);">Email verified!</h2>
+        <p class="actr-card-sub">Your account is active. You can sign in to the admin dashboard.</p>
+        <a href="{{ url_for('login') }}" class="actr-btn actr-btn-primary actr-btn-block">Sign in now</a>
+    {% else %}
+        <div class="auth-icon">❌</div>
+        <h2 class="actr-card-title" style="color: var(--danger);">Verification failed</h2>
+        <p class="actr-card-sub">The link is invalid or has expired. Please register again.</p>
+        <a href="{{ url_for('register') }}" class="actr-btn actr-btn-primary actr-btn-block">Register again</a>
+    {% endif %}
+</div>
+{% endblock %}

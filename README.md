@@ -23,7 +23,7 @@ cp .env.example .env
 python app.py
 ```
 
-Open **http://localhost:5001** (or your `PORT`).
+Open **http://localhost:5001** — you will land on the sign-in page (or your `PORT`).
 
 ## Environment variables
 
@@ -49,9 +49,9 @@ Open **http://localhost:5001** (or your `PORT`).
 
 | Path | Purpose |
 |------|---------|
-| `/` | Landing |
-| `/register` | Admin registration |
-| `/login` | Admin login |
+| `/` | Sign in (or dashboard if logged in) |
+| `/login` | Admin sign in |
+| `/register` | Create account |
 | `/admin` | Session management |
 | `/game/<session_code>` | Participant join |
 

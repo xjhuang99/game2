@@ -3,29 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gas Station Game</title>
-
+    <title>{% block title %}Milk Tea Price War — ACTR Lab{% endblock %}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/actr.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js" integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO" crossorigin="anonymous"></script>
-
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% block extra_head %}{% endblock %}
 </head>
-<body>
-
-    <nav class="navbar">
-        <div class="nav-content">
-            <strong>🥤 Hong Kong Milk Tea Wars</strong>
+<body class="app-page">
+    {% block navbar %}
+    <nav class="actr-navbar">
+        <div class="nav-inner">
+            <a href="{{ url_for('admin_dashboard') if current_user.is_authenticated else url_for('login') }}" class="actr-brand">
+                🥤 <span class="accent">ACTR</span> Milk Tea Price War
+            </a>
+            {% block nav_extra %}{% endblock %}
         </div>
     </nav>
+    {% endblock %}
 
-    <div class="main-container">
+    <main class="actr-main">
         {% block content %}{% endblock %}
-    </div>
+    </main>
 
-    <footer>
-        <p>&copy; ACTR </p>
+    <footer class="actr-footer">
+        <p>&copy; 2026 ACTR Lab</p>
     </footer>
-
+    {% block scripts %}{% endblock %}
 </body>
 </html>
