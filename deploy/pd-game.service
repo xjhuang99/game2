@@ -1,0 +1,16 @@
+[Unit]
+Description=ACTR PD Game (game2 / game.xjhuang.com)
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/pd-game
+EnvironmentFile=/opt/pd-game/.env
+ExecStart=/opt/pd-game/.venv/bin/python app.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
