@@ -7,6 +7,8 @@ eventlet.monkey_patch()
 
 # 2. STANDARD IMPORTS
 import os
+import re
+import secrets
 from flask import Flask, render_template, request, Response, redirect, url_for, flash
 from flask_socketio import SocketIO, emit, join_room, leave_room
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
@@ -20,7 +22,8 @@ import json
 
 # 3. YOUR APP IMPORTS
 from extensions import db
-from models import SessionLog, ChatRecord, GameResult, AdminUser
+from models import SessionLog, ChatRecord, GameResult, AdminUser, AdminAccount
+from email_service import send_verification_email
 
 # --- SERVICES IMPORT ---
 try:
@@ -43,7 +46,7 @@ except Exception as e:
 
 # --- CONFIGURATION ---
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'ACTR2026_SECRET_KEY'
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY', 'ACTR2026_SECRET_KEY')
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'gas_station.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -75,7 +78,18 @@ HKT = timezone(timedelta(hours=8))
 def load_user(user_id):
     if user_id == "ACTR2026":
         return AdminUser(user_id)
-    return None
+    try:
+        return AdminAccount.query.get(int(user_id))
+    except (TypeError, ValueError):
+        return None
+
+
+def _app_base_url():
+    return os.getenv("APP_BASE_URL", request.host_url.rstrip("/"))
+
+
+def _valid_email(email: str) -> bool:
+    return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email or ""))
 
 
 # ==========================================
@@ -259,15 +273,98 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        if username == 'ACTR2026' and password == 'ACTR2026':
-            user = AdminUser(username)
-            login_user(user)
+        username = (request.form.get('username') or '').strip()
+        password = request.form.get('password') or ''
+
+        account = AdminAccount.query.filter_by(username=username).first()
+        if account:
+            if not account.is_verified:
+                flash('请先点击 Gmail 中的验证链接激活账号，再登录。')
+                return render_template('login.html')
+            if account.check_password(password):
+                login_user(account)
+                flash('登录成功，欢迎回来！', 'success')
+                return redirect(url_for('admin_dashboard'))
+            flash('用户名或密码错误')
+            return render_template('login.html')
+
+        legacy_user = os.getenv('LEGACY_ADMIN_USER', 'ACTR2026')
+        legacy_pass = os.getenv('LEGACY_ADMIN_PASSWORD', 'ACTR2026')
+        if username == legacy_user and password == legacy_pass:
+            login_user(AdminUser(username))
+            flash('登录成功', 'success')
             return redirect(url_for('admin_dashboard'))
-        else:
-            flash('Invalid credentials')
+
+        flash('用户名或密码错误')
     return render_template('login.html')
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = (request.form.get('username') or '').strip()
+        email = (request.form.get('email') or '').strip().lower()
+        password = request.form.get('password') or ''
+        confirm = request.form.get('confirm_password') or ''
+
+        if len(username) < 3:
+            flash('用户名至少 3 个字符')
+            return render_template('register.html')
+        if not _valid_email(email):
+            flash('请输入有效的邮箱地址')
+            return render_template('register.html')
+        if len(password) < 8:
+            flash('密码至少 8 位')
+            return render_template('register.html')
+        if password != confirm:
+            flash('两次输入的密码不一致')
+            return render_template('register.html')
+        if AdminAccount.query.filter(
+            (AdminAccount.username == username) | (AdminAccount.email == email)
+        ).first():
+            flash('用户名或邮箱已被注册')
+            return render_template('register.html')
+
+        token = secrets.token_urlsafe(32)
+        account = AdminAccount(
+            username=username,
+            email=email,
+            is_verified=False,
+            verify_token=token,
+            verify_token_expires=datetime.utcnow() + timedelta(hours=24),
+        )
+        account.set_password(password)
+        db.session.add(account)
+        db.session.commit()
+
+        verify_url = f"{_app_base_url()}/verify-email/{token}"
+        ok, msg = send_verification_email(email, verify_url)
+        if ok:
+            flash(msg, 'success')
+            return render_template('register_sent.html', email=email)
+        flash(msg)
+        return render_template('register.html')
+
+    return render_template('register.html')
+
+
+@app.route('/verify-email/<token>')
+def verify_email(token):
+    account = AdminAccount.query.filter_by(verify_token=token).first()
+    if not account:
+        flash('验证链接无效或已使用')
+        return render_template('verify_result.html', success=False)
+
+    if account.verify_token_expires and account.verify_token_expires < datetime.utcnow():
+        flash('验证链接已过期，请重新注册')
+        return render_template('verify_result.html', success=False)
+
+    account.is_verified = True
+    account.verify_token = None
+    account.verify_token_expires = None
+    db.session.commit()
+    flash('邮箱验证成功！您现在可以登录管理后台。', 'success')
+    return render_template('verify_result.html', success=True)
 
 
 @app.route('/logout')
@@ -1299,5 +1396,8 @@ def admin_add_bots(data):
 
 
 if __name__ == '__main__':
-    with app.app_context(): db.create_all()
-    socketio.run(app, host='0.0.0.0', port=5001, debug=True, use_reloader=False)
+    with app.app_context():
+        db.create_all()
+    port = int(os.getenv('PORT', '5001'))
+    debug = os.getenv('FLASK_DEBUG', 'false').lower() in ('1', 'true', 'yes')
+    socketio.run(app, host='0.0.0.0', port=port, debug=debug, use_reloader=False)

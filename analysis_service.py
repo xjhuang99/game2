@@ -1,20 +1,13 @@
 import os
-from openai import OpenAI
 from dotenv import load_dotenv
+from llm_service import ChatLLMService
 
-# 加载环境变量
 load_dotenv()
 
 
 class AnalysisService:
     def __init__(self):
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key:
-            self.client = OpenAI(api_key=api_key)
-            print("✅ [AnalysisService] OpenAI Client initialized.")
-        else:
-            self.client = None
-            print("⚠️ [AnalysisService] No API Key found. AI features disabled.")
+        self.llm = ChatLLMService("AnalysisService")
 
     def _format_chat(self, chat_logs, limit=50):
         formatted_msgs = []
@@ -30,8 +23,8 @@ class AnalysisService:
         return "\n".join(formatted_msgs) if formatted_msgs else "(No chat history yet)"
 
     def analyze_match(self, match_data, team_a_name, team_b_name):
-        if not self.client:
-            return "⚠️ OpenAI API Key is missing in .env file."
+        if not self.llm.available:
+            return "⚠️ No LLM API key (set OPENAI_API_KEY or DEEPSEEK_API_KEY in .env)."
 
         chat_text = self._format_chat(match_data.get('chat_logs', []), limit=50)
 
@@ -69,21 +62,20 @@ class AnalysisService:
         """
 
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-3.5-turbo",
+            return self.llm.chat_completion(
                 messages=[
                     {"role": "system", "content": "You are a professional business strategy analyst."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
-                max_completion_tokens=400
+                model="gpt-3.5-turbo",
+                max_completion_tokens=400,
             )
-            return response.choices[0].message.content
         except Exception as e:
             print(f"❌ [AnalysisService] Error: {e}")
             return f"Error analyzing match: {str(e)}"
 
     def generate_coaching_feedback(self, match_data, team_a_name, team_b_name):
-        if not self.client:
+        if not self.llm.available:
             return "⚠️ AI Coach unavailable (No API Key)."
 
         history = match_data.get('history', [])
@@ -123,15 +115,14 @@ class AnalysisService:
         """
 
         try:
-            response = self.client.chat.completions.create(
-                model="gpt-4o",
+            return self.llm.chat_completion(
                 messages=[
                     {"role": "system", "content": "You are a world-class Business educator."},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
-                max_completion_tokens=600
+                model="gpt-4o",
+                max_completion_tokens=600,
             )
-            return response.choices[0].message.content
         except Exception as e:
             print(f"❌ [Coaching Error] {e}")
             return "Thinking process interrupted. Please discuss amongst yourselves."

@@ -1,22 +1,15 @@
 import random
 import json
 import os
-from openai import OpenAI
 from dotenv import load_dotenv
+from llm_service import ChatLLMService
 
 load_dotenv()
 
 
 class BotService:
     def __init__(self):
-        self.client = None
-        api_key = os.getenv("OPENAI_API_KEY")
-        if api_key:
-            self.client = OpenAI(api_key=api_key)
-            print("✅ [BotService] OpenAI Client Connected.")
-        else:
-            print("⚠️ [BotService] No OpenAI Key found. Bots will use fallback phrases.")
-
+        self.llm = ChatLLMService("BotService")
         self.bot_profiles = {}
         self.load_profiles()
         self.counters = {}
@@ -44,15 +37,14 @@ class BotService:
         return self.bot_profiles.get('default')
 
     def get_config(self, bot_name):
-        # Link the config fetcher to the actual profile
         return self.get_profile(bot_name)
 
     def should_respond(self, match_id, config):
-        # Use the dynamic threshold from bots_config.json (which is now 1)
         threshold = config.get('msg_threshold', 1) if config else 1
 
         key = match_id
-        if key not in self.counters: self.counters[key] = 0
+        if key not in self.counters:
+            self.counters[key] = 0
         self.counters[key] += 1
 
         if self.counters[key] >= threshold:
@@ -73,16 +65,17 @@ class BotService:
         opponent_msgs = [m for m in chat_history[-10:] if m['sender'] != bot_name]
 
         if not opponent_msgs:
-            if random.random() < 0.5: return None
+            if random.random() < 0.5:
+                return None
             context = "(Silence...)"
         else:
             context = "\n".join([f"{m['sender']}: {m['text']}" for m in opponent_msgs[-3:]])
 
-        if not self.client:
+        if not self.llm.available:
             return "I am an AI bot (No API Key)."
 
         try:
-            print(f"💬 [BotDebug] {bot_name} ({profile.get('name', 'Unknown')}) is thinking...")
+            print(f"💬 [BotDebug] {bot_name} is thinking...")
             system_prompt = profile.get('prompt', "You are a player in a game.")
 
             user_prompt = f"""
@@ -97,16 +90,14 @@ class BotService:
             - Do NOT use quotation marks.
             """
 
-            response = self.client.chat.completions.create(
-                model=profile.get('model', "gpt-4o"),  # Will use GPT-5 if in config, fallback to 4o
+            reply = self.llm.chat_completion(
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "user", "content": user_prompt},
                 ],
+                model=profile.get('model', "gpt-4o"),
                 max_completion_tokens=600,
             )
-
-            reply = response.choices[0].message.content.strip()
             reply = reply.replace('"', '').replace("'", "")
             print(f"✅ [BotReply] {bot_name}: {reply}")
             return reply
