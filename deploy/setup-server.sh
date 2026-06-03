@@ -5,7 +5,7 @@
 set -euo pipefail
 
 REPO_URL="${REPO_URL:-https://github.com/xjhuang99/game2.git}"
-GIT_REF="${GIT_REF:-4feeea9}"
+GIT_REF="${GIT_REF:-main}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/pd-game}"
 GROUP_ENV="${GROUP_ENV:-/opt/group_ai_chat_bot/.env}"
 
