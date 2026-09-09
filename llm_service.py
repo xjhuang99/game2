@@ -7,8 +7,11 @@ load_dotenv()
 # DeepSeek chat API is OpenAI-compatible; use deepseek-chat for general dialogue.
 DEEPSEEK_BASE_URL = "https://api.deepseek.com"
 DEEPSEEK_CHAT_MODEL = "deepseek-chat"
+GEMINI_BASE_URL = "https://generativelanguage.googleapis.com/v1beta/openai/"
+GEMINI_CHAT_MODEL = "gemini-2.5-flash"
 
 OPENAI_TO_DEEPSEEK = {
+    "gpt-4o-mini": DEEPSEEK_CHAT_MODEL,
     "gpt-5": DEEPSEEK_CHAT_MODEL,
     "gpt-4o": DEEPSEEK_CHAT_MODEL,
     "gpt-4": DEEPSEEK_CHAT_MODEL,
@@ -21,17 +24,23 @@ def map_model_for_deepseek(model: str) -> str:
 
 
 class ChatLLMService:
-    """Try OpenAI chat completions first; fall back to DeepSeek on failure."""
+    """Try OpenAI, then Gemini, then DeepSeek."""
 
     def __init__(self, service_name: str = "LLM"):
         self.service_name = service_name
         self.openai_client = None
+        self.gemini_client = None
         self.deepseek_client = None
 
         openai_key = os.getenv("OPENAI_API_KEY", "").strip()
         if openai_key:
             self.openai_client = OpenAI(api_key=openai_key)
             print(f"✅ [{self.service_name}] OpenAI ready.")
+
+        gemini_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+        if gemini_key:
+            self.gemini_client = OpenAI(api_key=gemini_key, base_url=GEMINI_BASE_URL)
+            print(f"✅ [{self.service_name}] Gemini ready ({GEMINI_CHAT_MODEL}).")
 
         deepseek_key = os.getenv("DEEPSEEK_API_KEY", "").strip()
         if deepseek_key:
@@ -41,12 +50,12 @@ class ChatLLMService:
             )
             print(f"✅ [{self.service_name}] DeepSeek ready ({DEEPSEEK_CHAT_MODEL}).")
 
-        if not self.openai_client and not self.deepseek_client:
-            print(f"⚠️ [{self.service_name}] No OPENAI_API_KEY or DEEPSEEK_API_KEY.")
+        if not self.openai_client and not self.gemini_client and not self.deepseek_client:
+            print(f"⚠️ [{self.service_name}] No OpenAI, Gemini, or DeepSeek API key.")
 
     @property
     def available(self) -> bool:
-        return bool(self.openai_client or self.deepseek_client)
+        return bool(self.openai_client or self.gemini_client or self.deepseek_client)
 
     def chat_completion(
         self,
@@ -55,11 +64,13 @@ class ChatLLMService:
         max_completion_tokens: int = 600,
     ) -> str:
         if not self.available:
-            raise RuntimeError("No LLM API key configured (OPENAI_API_KEY or DEEPSEEK_API_KEY).")
+            raise RuntimeError("No LLM API key configured (OpenAI, Gemini, or DeepSeek).")
 
         attempts = []
         if self.openai_client:
             attempts.append(("OpenAI", self.openai_client, model))
+        if self.gemini_client:
+            attempts.append(("Gemini", self.gemini_client, GEMINI_CHAT_MODEL))
         if self.deepseek_client:
             attempts.append(
                 ("DeepSeek", self.deepseek_client, map_model_for_deepseek(model))

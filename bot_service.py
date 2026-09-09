@@ -27,7 +27,7 @@ class BotService:
                 "prompt": "You are a helpful game assistant.",
                 "msg_threshold": 1,
                 "chance_to_respond": 1.0,
-                "model": "gpt-4o"
+                "model": "gpt-4o-mini"
             }
 
     def get_profile(self, bot_name):
@@ -95,7 +95,7 @@ class BotService:
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_prompt},
                 ],
-                model=profile.get('model', "gpt-4o"),
+                model=profile.get('model', "gpt-4o-mini"),
                 max_completion_tokens=600,
             )
             reply = reply.replace('"', '').replace("'", "")

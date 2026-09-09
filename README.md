@@ -93,7 +93,7 @@ location / {
 ## Project layout
 
 ```
-llm_service.py       # OpenAI → DeepSeek fallback
+llm_service.py       # OpenAI → Gemini → DeepSeek fallback
 email_service.py     # Gmail verification mail
 bot_service.py       # In-game AI bots
 analysis_service.py  # Match analysis & coaching
