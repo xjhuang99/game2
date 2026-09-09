@@ -238,9 +238,9 @@ def assign_teams(sd, team_id, match_id, member_sids, default_name, is_blue):
                 join_room(team_id, sid)
                 join_room(match_id, sid)
                 socketio.emit('game_start_setup', {
-                    'team_name': default_name,
-                    'is_blue': is_blue,
-                    'teammates': [sd['players'][s]['name'] for s in member_sids if s in sd['players']]
+                    'teammates': [sd['players'][s]['name'] for s in member_sids if s in sd['players']],
+                    'opponents': [p['name'] for p in sd['players'].values()
+                                  if p.get('match_id') == match_id and p.get('team_id') != team_id]
                 }, room=sid)
 
 

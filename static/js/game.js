@@ -6,6 +6,8 @@
 const socket = io();
 let currentChannel = 'team'; // Default chat scope
 let resultChart = null; // Chart instance
+let playerNames = [];
+let opponentNames = [];
 
 // --- 1. INITIALIZATION & CONNECTION DEBUGGING ---
 window.onload = () => {
@@ -116,14 +118,14 @@ socket.on('game_start_setup', (data) => {
     document.getElementById('lobby-screen').style.display = 'none';
     document.getElementById('game-ui').style.display = 'block';
 
-    const teamTitle = document.getElementById('team-name');
-    if(teamTitle) {
-        teamTitle.innerText = data.team_name;
-        teamTitle.className = data.is_blue ? 'text-blue' : 'text-red';
-    }
-
     const memberList = document.getElementById('teammates-list');
-    if(memberList) memberList.innerText = "Members: " + data.teammates.join(', ');
+    playerNames = data.teammates || [];
+    opponentNames = data.opponents || [];
+    if(memberList) memberList.innerText = [...playerNames, ...opponentNames].join(', ');
+    const resultA = document.getElementById('result-a-label');
+    const resultB = document.getElementById('result-b-label');
+    if (resultA) resultA.innerText = playerNames.join(', ') || 'Your side';
+    if (resultB) resultB.innerText = opponentNames.join(', ') || 'Other side';
 
     const chatWin = document.getElementById('chat-window');
     if(chatWin) chatWin.innerHTML = '<div class="message msg-system" data-scope="system"><div class="msg-text">Channel Established.</div></div>';
@@ -192,19 +194,6 @@ socket.on('start_round_timer', (data) => {
     const rDisp = document.getElementById('round-display');
     if(rDisp) rDisp.innerText = `Round ${data.round} / ${data.total}`;
 
-    // Lock Rename Input on Round 1
-    if (data.round === 1) {
-        const renameInput = document.getElementById('rename-input');
-        const renameBtn = document.querySelector('.btn-rename');
-
-        if (renameInput && renameBtn) {
-            renameInput.disabled = true;
-            renameInput.placeholder = "Locked";
-            renameBtn.disabled = true;
-            renameBtn.style.opacity = "0.5";
-            renameBtn.innerText = "Locked";
-        }
-    }
 
     const resOver = document.getElementById('result-overlay');
     const statMsg = document.getElementById('status-msg');
@@ -364,7 +353,7 @@ socket.on('game_over', (data) => {
             labels: labels,
             datasets: [
                 {
-                    label: 'Blue Team (HK$)',
+                    label: playerNames.join(', ') || 'Your side',
                     data: dataA,
                     borderColor: '#2563eb',
                     backgroundColor: 'rgba(37, 99, 235, 0.1)',
@@ -372,7 +361,7 @@ socket.on('game_over', (data) => {
                     fill: true
                 },
                 {
-                    label: 'Red Team (HK$)',
+                    label: opponentNames.join(', ') || 'Other side',
                     data: dataB,
                     borderColor: '#dc2626',
                     backgroundColor: 'rgba(220, 38, 38, 0.1)',

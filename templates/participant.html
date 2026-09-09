@@ -122,10 +122,6 @@
     <h2>Waiting for Admin...</h2>
     <p style="color:#64748b;">You are connected. Simulation starts soon.</p>
 
-    <p style="color:#f59e0b; font-size:0.9rem; margin-top:10px;">
-        ⚠️ <b>Note:</b> You can only change your team name before the game starts.
-    </p>
-
     <div style="margin-top: 30px; text-align: left; background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
         <h3 style="color:var(--primary); border-bottom: 2px solid #f1f5f9; padding-bottom: 10px;">📜 Game Rules</h3>
         <ul style="color: #475569; line-height: 1.8; font-size: 0.95rem; padding-left: 20px;">
@@ -147,13 +143,7 @@
     <div class="top-bar">
         <div>
             <button onclick="openIssueModal()" class="btn-report">⚠️ Report Issue</button>
-            <h2 id="team-name" style="margin:0;">Team</h2>
-            <div id="teammates-list" style="font-size:0.85rem; color:#64748b;"></div>
-
-            <div id="rename-box">
-                <input id="rename-input" placeholder="New Name...">
-                <button class="btn-rename" onclick="handleRename()">Set Name</button>
-            </div>
+            <div id="teammates-list" style="font-size:0.95rem; color:#64748b;"></div>
         </div>
         <div class="timer-box">
             <div style="font-size:0.7rem; font-weight:800; color:#94a3b8; letter-spacing:1px;">ROUND ENDS</div>
@@ -244,8 +234,8 @@
                 <thead style="background:#f8fafc; border-bottom:2px solid #e2e8f0;">
                     <tr>
                         <th style="padding:10px; width:20%;">Rnd</th>
-                        <th style="padding:10px; width:40%;">Blue (You)</th>
-                        <th style="padding:10px; width:40%;">Red (Opp)</th>
+                        <th id="result-a-label" style="padding:10px; width:40%;">Your side</th>
+                        <th id="result-b-label" style="padding:10px; width:40%;">Other side</th>
                     </tr>
                 </thead>
                 <tbody id="game-over-history-body"></tbody>
@@ -269,33 +259,7 @@
 <script src="{{ url_for('static', filename='js/game.js') }}"></script>
 
 <script>
-    // 1. Rename Functionality - Send to server
-    function handleRename() {
-        const newName = document.getElementById('rename-input').value.trim();
-        if(newName) {
-            socket.emit('update_team_name', { name: newName });
-            document.getElementById('rename-input').value = "";
-        }
-    }
-
-    // --- Listen for the server's confirmation and update the UI ---
-    socket.on('team_name_updated', (data) => {
-        // Update the big H2 title
-        const teamTitle = document.getElementById('team-name');
-        if(teamTitle) {
-            teamTitle.innerText = data.name;
-        }
-
-        // Show a quick success popup at the top
-        const broadcast = document.getElementById('broadcast-overlay');
-        if(broadcast) {
-            broadcast.innerText = `Team name updated to: ${data.name}`;
-            broadcast.classList.add('show');
-            setTimeout(() => broadcast.classList.remove('show'), 3000);
-        }
-    });
-
-    // 2. End Game View Logic
+    // End Game View Logic
     function closeAndShowChat() {
         document.getElementById('game-over-modal').style.display = 'none';
         document.getElementById('active-game-panel').style.display = 'none';
