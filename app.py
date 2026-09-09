@@ -197,7 +197,7 @@ def send_admin_update(s_code):
             'team_b_name': sd['teams'][m['team_b']].get('custom_name', 'Red'),
             'history': m['history'],
             'total_rounds': sd['config'].get('total_rounds', 5),
-            'modified_moves': m.get('modify_count', 0)
+            'modified_moves': sum(m.get('modify_counts', {}).values())
         })
 
     p_count = len(sd['players'])
@@ -460,6 +460,13 @@ def admin_panel_view(session_code):
     return render_template('admin.html', session_code=session_code, share_link=share_link)
 
 
+@app.route('/settings-guide')
+@login_required
+def settings_guide():
+    """Plain-language reference for every scenario setting in the admin panel."""
+    return render_template('settings_guide.html')
+
+
 @app.route('/game/<session_code>')
 @app.route('/game/<session_code>/<student_id>')
 @app.route('/game/<session_code>/<student_id>/<player_name>')
@@ -657,7 +664,7 @@ def admin_create_teams(data):
         sd['matches'][m_id] = {
             'id': m_id, 'team_a': ta_id, 'team_b': tb_id,
             'moves': {}, 'round': 0, 'history': [], 'chat_logs': [], 'status': 'setup', 'is_finished': False,
-            'modify_count': 0
+            'modify_counts': {ta_id: 0, tb_id: 0}
         }
 
         assign_teams(sd, ta_id, m_id, ta_sids, 'Blue', True)
@@ -710,7 +717,7 @@ def admin_start_game(data):
         m['history'] = []
         m['moves'] = {}
         m['is_finished'] = False
-        m['modify_count'] = 0
+        m['modify_counts'] = {m['team_a']: 0, m['team_b']: 0}
         start_next_round(s_code, m['id'])
     send_admin_update(s_code)
 
@@ -765,7 +772,7 @@ def start_next_round(s_code, m_id):
     round_cfg = config['schedule'][current_round_idx]
     m['status'] = 'playing'
     m['moves'] = {}
-    m['modify_count'] = 0
+    m['modify_counts'] = {m['team_a']: 0, m['team_b']: 0}
     m['round_start_time'] = time.time()
     m['spy_msg_counts'] = {m['team_a']: 0, m['team_b']: 0}
 
@@ -950,8 +957,9 @@ def resolve_round(s_code, m_id):
     ma, mb = m['moves'][m['team_a']], m['moves'][m['team_b']]
     modify_penalty = round_cfg.get('modify_penalty', 0)
 
-    penalty_a = modify_penalty * m['modify_count'] if 'modified_move_a' in m else 0
-    penalty_b = modify_penalty * m['modify_count'] if 'modified_move_b' in m else 0
+    modify_counts = m.get('modify_counts', {})
+    penalty_a = modify_penalty * modify_counts.get(m['team_a'], 0)
+    penalty_b = modify_penalty * modify_counts.get(m['team_b'], 0)
 
     if 'modified_move_a' in m: ma = m['modified_move_a']
     if 'modified_move_b' in m: mb = m['modified_move_b']
@@ -1228,8 +1236,9 @@ def handle_modify_move(data):
     else:
         match['modified_move_b'] = new_choice
 
-    match['modify_count'] = match.get('modify_count', 0) + 1
-    penalty = round_cfg.get('modify_penalty', 0) * match['modify_count']
+    modify_counts = match.setdefault('modify_counts', {match['team_a']: 0, match['team_b']: 0})
+    modify_counts[p['team_id']] = modify_counts.get(p['team_id'], 0) + 1
+    penalty = round_cfg.get('modify_penalty', 0) * modify_counts[p['team_id']]
 
     log_action(s_code, p['name'], f"Modified Move to {new_choice.upper()} (Penalty: {penalty})")
     socketio.emit('move_modified', {'player': p['name'], 'new_choice': new_choice, 'penalty': penalty},

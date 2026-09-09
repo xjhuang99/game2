@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Scenario Settings Guide — ACTR Lab{% endblock %}
+
+{% block extra_head %}
+<style>
+    :root {
+        --tea-brown: #74452c;
+        --tea-cream: #fff7e7;
+        --tea-jade: #2f6b57;
+        --tea-red: #b64032;
+    }
+    body.app-page { background: #fbf7ef; }
+    .guide { max-width: 1080px; margin: 0 auto; }
+    .guide-hero { position: relative; min-height: 390px; border-radius: 24px; overflow: hidden; box-shadow: 0 22px 50px rgba(72,46,29,.18); margin-bottom: 28px; }
+    .guide-hero img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .guide-hero::after { content:""; position:absolute; inset:0; background: linear-gradient(90deg, rgba(48,30,20,.85), rgba(48,30,20,.2) 64%, transparent); }
+    .hero-copy { position: relative; z-index: 1; width: min(520px, 80%); color: white; padding: 70px 48px; }
+    .eyebrow { display:inline-block; padding:6px 10px; border-radius:999px; background:rgba(255,247,231,.17); border:1px solid rgba(255,255,255,.35); font-size:.78rem; font-weight:800; letter-spacing:.08em; text-transform:uppercase; }
+    .hero-copy h1 { margin:14px 0 12px; font-size: clamp(2rem, 5vw, 3.4rem); line-height:1.02; }
+    .hero-copy p { margin:0; line-height:1.7; color:#fff7e7; }
+    .quick-nav { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:28px; }
+    .quick-nav a { color:var(--tea-brown); background:white; border:1px solid #e7d5b9; padding:8px 12px; border-radius:999px; text-decoration:none; font-size:.82rem; font-weight:700; }
+    .quick-nav a:hover { background:var(--tea-jade); color:white; }
+    .section-title { color:var(--tea-brown); margin:38px 0 14px; }
+    .guide-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+    .guide-card { scroll-margin-top:80px; background:white; border:1px solid #ead9bf; border-radius:16px; padding:20px; box-shadow:0 5px 18px rgba(88,55,35,.06); }
+    .guide-card h3 { margin:0 0 8px; color:var(--tea-brown); display:flex; align-items:center; gap:9px; }
+    .guide-card p { color:#5f5148; line-height:1.65; margin:7px 0; }
+    .guide-card .example { background:#f1f7f3; border-left:4px solid var(--tea-jade); padding:10px 12px; border-radius:0 9px 9px 0; font-size:.9rem; }
+    .guide-card .note { color:#8a3b31; font-size:.86rem; }
+    .wide { grid-column:1/-1; }
+    .choice-row { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:12px; }
+    .choice { background:var(--tea-cream); border-radius:10px; padding:12px; color:#5f4634; }
+    .choice strong { display:block; color:var(--tea-jade); margin-bottom:4px; }
+    .guide-footer { margin:30px 0 10px; padding:20px; background:#6f432d; color:#fff7e7; border-radius:16px; display:flex; justify-content:space-between; align-items:center; gap:16px; }
+    .guide-footer a { color:white; border-color:#d9c29d; }
+    @media (max-width:720px) {
+        .guide-grid, .choice-row { grid-template-columns:1fr; }
+        .wide { grid-column:auto; }
+        .guide-hero { min-height:440px; }
+        .hero-copy { width:100%; padding:54px 26px; }
+        .guide-footer { align-items:flex-start; flex-direction:column; }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<article class="guide">
+    <header class="guide-hero">
+        <img src="{{ url_for('static', filename='images/hk-milk-tea-strategy-guide.png') }}" alt="Two Hong Kong milk tea shops making strategic price decisions">
+        <div class="hero-copy">
+            <span class="eyebrow">ACTR Scenario Manual</span>
+            <h1>Build the price war, round by round.</h1>
+            <p>Every setting changes what participants can see, say, revise, or earn. Use this guide while designing your Prisoner’s Dilemma session.</p>
+        </div>
+    </header>
+
+    <nav class="quick-nav" aria-label="Settings guide sections">
+        {% for anchor, label in [('total-rounds','Rounds'),('reset','Reset'),('timeout-default','Timeout'),('time-mode','Time Mode'),('sudden-death','Sudden Death'),('time','Time'),('blind','Blind'),('silent','Silent'),('spy','Spy'),('modify','Modify'),('penalty','Penalty'),('skew','Skew'),('admin-message','Message'),('shuffle','Shuffle')] %}
+        <a href="#{{ anchor }}">{{ label }}</a>
+        {% endfor %}
+    </nav>
+
+    <h2 class="section-title">Whole-session controls</h2>
+    <div class="guide-grid">
+        <section class="guide-card" id="total-rounds"><h3>🧾 Total Rounds</h3><p>Sets how many rounds appear in the schedule and how many standard rounds the match will play.</p><p class="example">Example: enter 5 to create rows 1–5.</p></section>
+        <section class="guide-card" id="reset"><h3>🛠️ Reset</h3><p>Rebuilds the round table from the current Total Rounds value.</p><p class="note">Important: rebuilding the table clears any round-by-round settings you already entered.</p></section>
+        <section class="guide-card wide" id="timeout-default">
+            <h3>⏰ Timeout Default</h3><p>Chooses what happens when a team does not submit before the round ends.</p>
+            <div class="choice-row"><div class="choice"><strong>Auto Keep</strong>Records Keep for the missing choice.</div><div class="choice"><strong>Auto Cut</strong>Records Cut for the missing choice.</div><div class="choice"><strong>Zero Payoff</strong>Uses the default choice to resolve the opponent’s outcome, but gives the timed-out team zero payoff.</div></div>
+        </section>
+        <section class="guide-card wide" id="time-mode">
+            <h3>⏱️ Time Mode</h3><p>Controls when matches advance, especially when several pairs play at different speeds.</p>
+            <div class="choice-row"><div class="choice"><strong>⚡ Async (Fast)</strong>Each match advances independently as soon as its round resolves.</div><div class="choice"><strong>🐢 Sync (Wait Full Time)</strong>Completed matches wait until all active matches finish before the next round.</div><div class="choice"><strong>⚖️ Mixed (Grace +10s)</strong>A hybrid pacing option: fast play with a short grace window for slower matches.</div></div>
+        </section>
+        <section class="guide-card wide" id="sudden-death"><h3>🎁 Sudden Death (+2)</h3><p>When enabled, participants initially see the planned match length, then two surprise rounds are added after the scheduled final round. This is useful for testing end-game effects.</p><p class="note">The extra rounds copy the settings from the final scheduled round.</p></section>
+    </div>
+
+    <h2 class="section-title">Round-by-round controls</h2>
+    <div class="guide-grid">
+        <section class="guide-card" id="time"><h3>⌛ Time(s)</h3><p>The decision time for that round in seconds. When the timer expires, Timeout Default is applied.</p><p class="example">Use 45 for normal discussion; use 15 to create time pressure.</p></section>
+        <section class="guide-card" id="blind"><h3>🙈 Blind</h3><p>Hides that round’s result and payoff from participants. The server still records the choices and scores.</p><p class="example">Useful for studying decisions when immediate feedback is removed.</p></section>
+        <section class="guide-card" id="silent"><h3>🔇 Silent</h3><p>Disables participant chat for that round. Players must decide without sending messages, and chat-triggered bots stay silent.</p></section>
+        <section class="guide-card" id="spy"><h3>🕵️ Spy Mode</h3><p>Leaks selected opponent information in team games: the first line, first two lines, all team chat, or the opponent’s submitted/modified decision.</p><p class="note">Inactive in 1 vs 1 because there is no private teammate discussion to spy on.</p></section>
+        <section class="guide-card" id="modify"><h3>✏️ Modify</h3><p>Allows a team to revise its submitted Keep/Cut choice while the round is still open. Each revision can incur the configured penalty.</p></section>
+        <section class="guide-card" id="penalty"><h3>🧾 Penalty</h3><p>The HK$ amount deducted for each use of Modify. It only matters when Modify is enabled. Final payoff cannot fall below zero.</p><p class="example">HK$100 × 2 revisions = HK$200 deducted.</p></section>
+        <section class="guide-card" id="skew"><h3>📈 Skew</h3><p>Multiplies both teams’ base payoffs for that round before modification penalties are deducted.</p><p class="example">A 1.5 skew turns a HK$10,000 base payoff into HK$15,000.</p></section>
+        <section class="guide-card" id="admin-message"><h3>📣 Admin Message</h3><p>An optional note shown in the round-start system message. Use it for instructions, context, or experimental treatments.</p></section>
+        <section class="guide-card wide" id="shuffle"><h3>🔀 Shuffle</h3><p>Randomly reallocates human participants between the two teams after that round. It changes who works together in the next round.</p><p class="note">Inactive in 1 vs 1. Use it only when changing group membership is part of the study design.</p></section>
+    </div>
+
+    <footer class="guide-footer"><span>Tip: test the full schedule once with dummy participants before running a class.</span><a href="javascript:window.close()" class="actr-btn actr-btn-outline">Close guide</a></footer>
+</article>
+{% endblock %}

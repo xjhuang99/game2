@@ -32,6 +32,37 @@
     body.app-page { background: var(--bg); }
     .container { max-width: 1400px; margin: 0 auto; padding: 0; }
 
+    /* A restrained Hong Kong milk-tea palette for the scenario editor. */
+    #view-settings {
+        --tea-brown: #74452c;
+        --tea-cream: #fff7e7;
+        --tea-jade: #2f6b57;
+        --tea-red: #b64032;
+    }
+    #view-settings .panel { border-color: #ead9bf; box-shadow: 0 12px 28px rgba(88, 55, 35, 0.09); }
+    #view-settings .panel-head {
+        background: linear-gradient(90deg, #fff7e7, #f4ead8);
+        color: var(--tea-brown);
+        border-bottom-color: #ead9bf;
+    }
+    #view-settings .control-row { background: #fffaf1; border-color: #ead9bf; }
+    #view-settings .scheduler-table th { background: #f8efe0; color: #684835; }
+    #view-settings .scheduler-table tbody tr:hover { background: #fffaf1; }
+    .setting-label { display: inline-flex; align-items: center; gap: 5px; }
+    .setting-help {
+        display: inline-flex; align-items: center; justify-content: center;
+        width: 18px; height: 18px; border-radius: 50%;
+        background: #f4e1bd; color: #74452c; border: 1px solid #d7bb8c;
+        text-decoration: none; font-size: 0.7rem; font-weight: 800;
+        vertical-align: middle; transition: transform .15s, background .15s;
+    }
+    .setting-help:hover { background: #2f6b57; color: white; transform: translateY(-1px); }
+    .settings-intro {
+        display: flex; align-items: center; justify-content: space-between; gap: 16px;
+        margin: 0 0 16px; padding: 12px 16px; border-radius: 10px;
+        background: #f1f7f3; border: 1px solid #cfe0d7; color: #315647;
+    }
+
     #invite-link-box { animation: fadeIn 0.5s; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(-5px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -120,18 +151,23 @@
         <div class="panel">
             <div class="panel-head"><span>⚙️ Scenario Editor</span></div>
             <div class="panel-body">
+                <div class="settings-intro">
+                    <span>🥤 Build each round like a milk-tea menu: choose the timing, information, communication and payoff rules.</span>
+                    <a href="{{ url_for('settings_guide') }}" target="_blank" rel="noopener" class="btn btn-outline" style="padding:7px 12px;">Illustrated settings guide ↗</a>
+                </div>
                 <div class="control-row">
                     <div style="display:flex; flex-direction:column; gap:5px;">
-                        <label style="font-weight:600; font-size:0.8rem;">Total Rounds</label>
+                        <label class="setting-label" style="font-weight:600; font-size:0.8rem;">Total Rounds <a class="setting-help" href="{{ url_for('settings_guide') }}#total-rounds" target="_blank" aria-label="Explain Total Rounds">?</a></label>
                         <div style="display:flex; gap:5px;">
                             <input type="number" id="total-rounds" value="5" class="form-input" style="width:50px; text-align:center;" onchange="generateScheduleUI()">
                             <button onclick="generateScheduleUI()" class="btn btn-outline" style="padding:4px 8px; font-size:0.8rem;">🛠️ Reset</button>
+                            <a class="setting-help" href="{{ url_for('settings_guide') }}#reset" target="_blank" aria-label="Explain Reset">?</a>
                         </div>
                     </div>
                     <div style="width:1px; height:40px; background:#e2e8f0; margin:0 15px;"></div>
 
                     <div style="display:flex; flex-direction:column; gap:5px;">
-                        <label style="font-size:0.8rem; font-weight:600;">Timeout Default</label>
+                        <label class="setting-label" style="font-size:0.8rem; font-weight:600;">Timeout Default <a class="setting-help" href="{{ url_for('settings_guide') }}#timeout-default" target="_blank" aria-label="Explain Timeout Default">?</a></label>
                         <select id="timeout-mode" class="form-input">
                             <option value="keep">Auto Keep</option>
                             <option value="cut">Auto Cut</option>
@@ -140,7 +176,7 @@
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:5px; margin-left:15px;">
-                        <label style="font-size:0.8rem; font-weight:600;">Time Mode</label>
+                        <label class="setting-label" style="font-size:0.8rem; font-weight:600;">Time Mode <a class="setting-help" href="{{ url_for('settings_guide') }}#time-mode" target="_blank" aria-label="Explain Time Mode">?</a></label>
                         <select id="sync-mode" class="form-input">
                             <option value="async">⚡ Async (Fast)</option>
                             <option value="sync">🐢 Sync (Wait Full Time)</option>
@@ -149,7 +185,7 @@
                     </div>
 
                     <div style="display:flex; flex-direction:column; gap:5px; margin-left:15px;">
-                        <label style="font-size:0.8rem; font-weight:600;">Sudden Death (+2)</label>
+                        <label class="setting-label" style="font-size:0.8rem; font-weight:600;">Sudden Death (+2) <a class="setting-help" href="{{ url_for('settings_guide') }}#sudden-death" target="_blank" aria-label="Explain Sudden Death">?</a></label>
                         <select id="sudden-death-mode" class="form-input">
                             <option value="false">Disable</option>
                             <option value="true">Enable</option>
@@ -162,15 +198,15 @@
                     <thead>
                             <tr>
                                 <th class="col-num">#</th>
-                                <th style="width:70px;">Time(s)</th>
-                                <th style="width:50px;">Blind</th>
-                                <th style="width:50px;">Silent</th>
-                                <th style="width:130px;">Spy Mode</th>
-                                <th style="width:50px;">Modify</th>
-                                <th style="width:70px;">Penalty</th>
-                                <th style="width:30px; padding-right:40px;">Skew</th>
-                                <th style="min-width:90px;">Admin Message</th>
-                                <th style="width:50px;">Shuffle</th>
+                                <th style="width:70px;">Time(s) <a class="setting-help" href="{{ url_for('settings_guide') }}#time" target="_blank">?</a></th>
+                                <th style="width:50px;">Blind <a class="setting-help" href="{{ url_for('settings_guide') }}#blind" target="_blank">?</a></th>
+                                <th style="width:50px;">Silent <a class="setting-help" href="{{ url_for('settings_guide') }}#silent" target="_blank">?</a></th>
+                                <th style="width:130px;">Spy Mode <a class="setting-help" href="{{ url_for('settings_guide') }}#spy" target="_blank">?</a></th>
+                                <th style="width:50px;">Modify <a class="setting-help" href="{{ url_for('settings_guide') }}#modify" target="_blank">?</a></th>
+                                <th style="width:70px;">Penalty <a class="setting-help" href="{{ url_for('settings_guide') }}#penalty" target="_blank">?</a></th>
+                                <th style="width:80px;">Skew <a class="setting-help" href="{{ url_for('settings_guide') }}#skew" target="_blank">?</a></th>
+                                <th style="min-width:130px;">Admin Message <a class="setting-help" href="{{ url_for('settings_guide') }}#admin-message" target="_blank">?</a></th>
+                                <th style="width:70px;">Shuffle <a class="setting-help" href="{{ url_for('settings_guide') }}#shuffle" target="_blank">?</a></th>
                             </tr>
                         </thead>
                         <tbody id="schedule-body"></tbody>
