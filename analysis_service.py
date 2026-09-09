@@ -24,7 +24,7 @@ class AnalysisService:
 
     def analyze_match(self, match_data, team_a_name, team_b_name):
         if not self.llm.available:
-            return "⚠️ No LLM API key (set OPENAI_API_KEY or DEEPSEEK_API_KEY in .env)."
+            return "⚠️ No LLM API key (set OPENAI_API_KEY, GEMINI_API_KEY, or DEEPSEEK_API_KEY in .env)."
 
         chat_text = self._format_chat(match_data.get('chat_logs', []), limit=50)
 

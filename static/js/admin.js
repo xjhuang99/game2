@@ -197,11 +197,14 @@ function toggleCoach() {
     }
 
     // Send to Backend
-    socket.emit('admin_toggle_metacognition', {
-        session_code: SESSION_CODE,
-        match_id: currentInspectId,
-        enable: isCoachActive
-    });
+    // The backend exposes a trigger event, not a toggle event. Only trigger
+    // the asynchronous coach analysis when reflection is turned on.
+    if (isCoachActive) {
+        socket.emit('admin_trigger_metacognition', {
+            session_code: SESSION_CODE,
+            match_id: currentInspectId
+        });
+    }
 }
 
 function triggerSuddenDeath() {
